@@ -6,10 +6,9 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=${TZ}
-      - PASSWORD= #optional
-      - CLI_ARGS= #optional
     volumes:
       - ${APP_DATA_DIR}/data/config:/config
+      - ${ROOT_FOLDER_HOST}/media/data/books:/books
     ports:
       # Calibre Webserver
       - ${APP_PORT}:8081
