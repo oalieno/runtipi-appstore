@@ -1,0 +1,58 @@
+services:
+  calibre:
+    image: lscr.io/linuxserver/calibre:7.19.0
+    container_name: calibre
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+      - PASSWORD= #optional
+      - CLI_ARGS= #optional
+    volumes:
+      - ${APP_DATA_DIR}/data/config:/config
+    ports:
+      # Calibre Webserver
+      - ${APP_PORT}:8081
+      # KasmVNC GUI
+      - 8085:8080
+    restart: unless-stopped
+    networks:
+      - tipi_main_network
+    labels:
+      # Main
+      traefik.enable: true
+      traefik.http.middlewares.calibre-web-redirect.redirectscheme.scheme: https
+      traefik.http.services.calibre.loadbalancer.server.port: 8081
+      traefik.http.middlewares.calibre-vnc-web-redirect.redirectscheme.scheme: https
+      traefik.http.services.calibre-vnc.loadbalancer.server.port: 8080
+      # Web
+      traefik.http.routers.calibre-insecure.rule: Host(`${APP_DOMAIN}`)
+      traefik.http.routers.calibre-insecure.entrypoints: web
+      traefik.http.routers.calibre-insecure.service: calibre
+      traefik.http.routers.calibre-insecure.middlewares: calibre-web-redirect
+      # Websecure
+      traefik.http.routers.calibre.rule: Host(`${APP_DOMAIN}`)
+      traefik.http.routers.calibre.entrypoints: websecure
+      traefik.http.routers.calibre.service: calibre
+      traefik.http.routers.calibre.tls.certresolver: myresolver
+      # Local domain
+      traefik.http.routers.calibre-local-insecure.rule: Host(`calibre.${LOCAL_DOMAIN}`)
+      traefik.http.routers.calibre-local-insecure.entrypoints: web
+      traefik.http.routers.calibre-local-insecure.service: calibre
+      traefik.http.routers.calibre-local-insecure.middlewares: calibre-web-redirect
+      # Local domain secure
+      traefik.http.routers.calibre-local.rule: Host(`calibre.${LOCAL_DOMAIN}`)
+      traefik.http.routers.calibre-local.entrypoints: websecure
+      traefik.http.routers.calibre-local.service: calibre
+      traefik.http.routers.calibre-local.tls: true
+      # Local domain (KasmVNC GUI)
+      traefik.http.routers.calibre-vnc-local-insecure.rule: Host(`calibre-vnc.${LOCAL_DOMAIN}`)
+      traefik.http.routers.calibre-vnc-local-insecure.entrypoints: web
+      traefik.http.routers.calibre-vnc-local-insecure.service: calibre-vnc
+      traefik.http.routers.calibre-vnc-local-insecure.middlewares: calibre-vnc-web-redirect
+      # Local domain secure (KasmVNC GUI)
+      traefik.http.routers.calibre-vnc-local.rule: Host(`calibre-vnc.${LOCAL_DOMAIN}`)
+      traefik.http.routers.calibre-vnc-local.entrypoints: websecure
+      traefik.http.routers.calibre-vnc-local.service: calibre-vnc
+      traefik.http.routers.calibre-vnc-local.tls: true
+      runtipi.managed: true
